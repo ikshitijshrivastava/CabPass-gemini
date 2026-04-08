@@ -8,63 +8,74 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-100 font-sans pb-20">
 
     <header class="bg-yellow-500 p-4 text-white text-center shadow-md">
         <h1 class="text-2xl font-bold">CabPass</h1>
         <p class="text-sm">Job Sharing & Billing</p>
     </header>
 
-    <div class="flex bg-white border-b sticky top-0 z-10">
-        <button onclick="showTab('jobs')" class="flex-1 p-3 text-blue-600 font-bold border-b-2 border-blue-600">Jobs</button>
-        <button onclick="showTab('drivers')" class="flex-1 p-3 text-gray-600">Drivers</button>
-        <button onclick="showTab('customers')" class="flex-1 p-3 text-gray-600">Customers</button>
-    </div>
+    <nav class="flex bg-white border-b sticky top-0 z-10">
+        <button onclick="showTab('jobs')" id="tab-jobs" class="flex-1 p-3 text-blue-600 font-bold border-b-2 border-blue-600">Jobs</button>
+        <button onclick="showTab('drivers')" id="tab-drivers" class="flex-1 p-3 text-gray-600">Drivers</button>
+        <button onclick="showTab('customers')" id="tab-customers" class="flex-1 p-3 text-gray-600">Customers</button>
+    </nav>
 
-    <main id="jobs" class="p-4 space-y-4">
+    <main id="section-jobs" class="p-4 space-y-4">
         <div class="flex justify-between items-center">
             <h2 class="text-xl font-bold">Active Jobs</h2>
-            <button class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm">+ New Job</button>
+            <button onclick="toggleModal('job-modal')" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm">+ New Job</button>
         </div>
-        
-        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-yellow-500">
-            <div class="flex justify-between">
-                <span class="text-xs font-bold text-gray-500 uppercase">Today 10:30 AM</span>
-                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Pending</span>
+        <div id="job-list" class="space-y-3">
             </div>
-            <p class="mt-2 text-lg font-semibold">Airport Drop</p>
-            <p class="text-sm text-gray-600">From: Koramangala | To: KIAL</p>
-            <p class="text-blue-600 font-bold mt-1">Tariff: ₹1,500</p>
-            <div class="mt-4 flex gap-2">
-                <button class="flex-1 bg-blue-500 text-white py-2 rounded text-sm">Accept</button>
-                <button onclick="shareToWA()" class="bg-green-500 text-white px-4 py-2 rounded text-sm">Share to WA</button>
-            </div>
-        </div>
     </main>
 
-    <div class="fixed bottom-0 w-full bg-white border-t p-3 flex justify-around items-center md:hidden">
-        <span class="text-xs text-gray-500">ID: 99XXXXXX21</span>
+    <main id="section-drivers" class="p-4 space-y-4 hidden">
+        <div class="flex justify-between items-center">
+            <h2 class="text-xl font-bold">My Drivers</h2>
+            <button onclick="toggleModal('driver-modal')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">+ Add Driver</button>
+        </div>
+        <div id="driver-list" class="space-y-3">
+            </div>
+    </main>
+
+    <main id="section-customers" class="p-4 space-y-4 hidden">
+        <div class="flex justify-between items-center">
+            <h2 class="text-xl font-bold">Customers</h2>
+            <button onclick="toggleModal('customer-modal')" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm">+ Add Customer</button>
+        </div>
+        <div id="customer-list" class="space-y-3">
+            </div>
+    </main>
+
+    <div id="driver-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl w-full max-w-md">
+            <h3 class="text-lg font-bold mb-4">Add Driver Details</h3>
+            <input id="d-name" type="text" placeholder="Driver Name" class="w-full border p-2 mb-2 rounded">
+            <input id="d-car" type="text" placeholder="Car Make/Model" class="w-full border p-2 mb-2 rounded">
+            <input id="d-reg" type="text" placeholder="Registration No." class="w-full border p-2 mb-2 rounded">
+            <input id="d-color" type="text" placeholder="Car Color" class="w-full border p-2 mb-2 rounded">
+            <input id="d-phone" type="tel" placeholder="Mobile Number" class="w-full border p-2 mb-4 rounded">
+            <div class="flex gap-2">
+                <button onclick="handleSaveDriver()" class="flex-1 bg-green-600 text-white py-2 rounded">Save</button>
+                <button onclick="toggleModal('driver-modal')" class="flex-1 bg-gray-200 py-2 rounded">Cancel</button>
+            </div>
+        </div>
     </div>
 
-    <script>
-        function showTab(tabName) {
-            alert("Switching to " + tabName + ". (Storage integration needed for multi-user)");
-        }
+    <div id="customer-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl w-full max-w-md">
+            <h3 class="text-lg font-bold mb-4">Add Customer</h3>
+            <input id="c-name" type="text" placeholder="Customer Name" class="w-full border p-2 mb-2 rounded">
+            <textarea id="c-address" placeholder="Home Address" class="w-full border p-2 mb-2 rounded"></textarea>
+            <input id="c-phone" type="tel" placeholder="Mobile Number" class="w-full border p-2 mb-4 rounded">
+            <div class="flex gap-2">
+                <button onclick="handleSaveCustomer()" class="flex-1 bg-purple-600 text-white py-2 rounded">Save</button>
+                <button onclick="toggleModal('customer-modal')" class="flex-1 bg-gray-200 py-2 rounded">Cancel</button>
+            </div>
+        </div>
+    </div>
 
-        function shareToWA() {
-            const text = "NEW JOB: Airport Drop\nPickup: Koramangala\nDrop: KIAL\nTariff: 1500\nAccept via CabPass App.";
-            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-        }
-
-        // PDF Generation for Billing
-        function generateBill(customer, amount) {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.text("CABPASS INVOICE", 10, 10);
-            doc.text(`Customer: ${customer}`, 10, 20);
-            doc.text(`Total Amount: ₹${amount}`, 10, 30);
-            doc.save("bill.pdf");
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
