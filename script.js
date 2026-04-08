@@ -3,19 +3,16 @@ let drivers = JSON.parse(localStorage.getItem('cp_drivers')) || [];
 let customers = JSON.parse(localStorage.getItem('cp_customers')) || [];
 let jobs = JSON.parse(localStorage.getItem('cp_jobs')) || [];
 
-// --- UI TAB SWITCHING ---
+// --- UI HELPERS ---
 function showTab(tab) {
-    // Hide all sections
     ['jobs', 'drivers', 'customers'].forEach(t => {
         document.getElementById(`section-${t}`).classList.add('hidden');
-        document.getElementById(`tab-${t}`).classList.remove('text-blue-600', 'font-bold', 'border-b-2', 'border-blue-600');
-        document.getElementById(`tab-${t}`).classList.add('text-gray-600');
+        document.getElementById(`tab-${t}`).className = "flex-1 p-3 text-gray-600";
     });
-
-    // Show selected section
     document.getElementById(`section-${tab}`).classList.remove('hidden');
-    document.getElementById(`tab-${tab}`).classList.add('text-blue-600', 'font-bold', 'border-b-2', 'border-blue-600');
+    document.getElementById(`tab-${tab}`).className = "flex-1 p-3 text-blue-600 font-bold border-b-2 border-blue-600";
     
+    if (tab === 'jobs') renderJobs();
     if (tab === 'drivers') renderDrivers();
     if (tab === 'customers') renderCustomers();
 }
@@ -25,16 +22,76 @@ function toggleModal(id) {
     modal.classList.toggle('hidden');
 }
 
-// --- DRIVER LOGIC ---
+// --- JOB LOGIC ---
+function handleSaveJob() {
+    const pickup = document.getElementById('j-pickup').value;
+    const drop = document.getElementById('j-drop').value;
+    const tariff = document.getElementById('j-tariff').value;
+    const time = document.getElementById('j-time').value;
+
+    if (!pickup || !drop || !tariff) return alert("Fill all job details!");
+
+    const newJob = { id: Date.now(), pickup, drop, tariff, time, status: 'Open' };
+    jobs.push(newJob);
+    localStorage.setItem('cp_jobs', JSON.stringify(jobs));
+    
+    // Auto-share to WA
+    const text = `🚖 *NEW JOB*%0A📍 *From:* ${pickup}%0A🏁 *To:* ${drop}%0A💰 *Tariff:* ₹${tariff}%0A⏰ *Time:* ${time}`;
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+
+    toggleModal('job-modal');
+    renderJobs();
+}
+
+function renderJobs() {
+    const list = document.getElementById('job-list');
+    list.innerHTML = jobs.length ? '' : '<p class="text-center text-gray-400 mt-10">No active jobs.</p>';
+    jobs.forEach((j, index) => {
+        list.innerHTML += `
+            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 ${j.status === 'Open' ? 'border-yellow-500' : 'border-green-500'}">
+                <div class="flex justify-between">
+                    <span class="text-xs font-bold text-gray-400">${j.time}</span>
+                    <span class="text-xs px-2 py-1 rounded ${j.status === 'Open' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}">${j.status}</span>
+                </div>
+                <p class="font-bold mt-1">${j.pickup} → ${j.drop}</p>
+                <p class="text-blue-600 font-bold">₹${j.tariff}</p>
+                <div class="mt-3 flex gap-2">
+                    ${j.status === 'Open' ? `<button onclick="completeJob(${index})" class="flex-1 bg-green-600 text-white py-2 rounded text-xs text-center">Complete & Bill</button>` : ''}
+                    <button onclick="deleteJob(${index})" class="bg-red-50 text-red-500 px-3 py-2 rounded text-xs">Delete</button>
+                </div>
+            </div>`;
+    });
+}
+
+function completeJob(index) {
+    jobs[index].status = 'Completed';
+    localStorage.setItem('cp_jobs', JSON.stringify(jobs));
+    
+    // Generate simple PDF Bill
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text("CABPASS INVOICE", 20, 20);
+    doc.text(`From: ${jobs[index].pickup}`, 20, 40);
+    doc.text(`To: ${jobs[index].drop}`, 20, 50);
+    doc.text(`Total Paid: ₹${jobs[index].tariff}`, 20, 70);
+    doc.save(`Bill_${jobs[index].id}.pdf`);
+    
+    renderJobs();
+}
+
+function deleteJob(index) {
+    jobs.splice(index, 1);
+    localStorage.setItem('cp_jobs', JSON.stringify(jobs));
+    renderJobs();
+}
+
+// --- DRIVER & CUSTOMER LOGIC (Keep existing) ---
 function handleSaveDriver() {
     const name = document.getElementById('d-name').value;
     const car = document.getElementById('d-car').value;
     const reg = document.getElementById('d-reg').value;
     const color = document.getElementById('d-color').value;
     const phone = document.getElementById('d-phone').value;
-
-    if (!name || !phone) return alert("Name and Phone are required!");
-
     drivers.push({ name, car, reg, color, phone });
     localStorage.setItem('cp_drivers', JSON.stringify(drivers));
     toggleModal('driver-modal');
@@ -43,32 +100,16 @@ function handleSaveDriver() {
 
 function renderDrivers() {
     const list = document.getElementById('driver-list');
-    list.innerHTML = drivers.length ? '' : '<p class="text-gray-500 text-center">No drivers added yet.</p>';
-    drivers.forEach((d, index) => {
-        list.innerHTML += `
-            <div class="bg-white p-4 rounded-lg shadow-sm border">
-                <p class="font-bold">${d.name}</p>
-                <p class="text-sm text-gray-600">${d.color} ${d.car} (${d.reg})</p>
-                <div class="mt-3 flex gap-2">
-                    <button onclick="shareDriver('${index}')" class="bg-green-500 text-white px-3 py-1 rounded text-xs">Share to WA</button>
-                    <button onclick="deleteItem('drivers', ${index})" class="bg-red-100 text-red-600 px-3 py-1 rounded text-xs">Delete</button>
-                </div>
-            </div>`;
+    list.innerHTML = '';
+    drivers.forEach(d => {
+        list.innerHTML += `<div class="bg-white p-3 rounded border"><p class="font-bold">${d.name}</p><p class="text-xs text-gray-500">${d.car} | ${d.reg}</p></div>`;
     });
 }
 
-function shareDriver(index) {
-    const d = drivers[index];
-    const text = `🚖 *Driver Details*%0A*Name:* ${d.name}%0A*Car:* ${d.color} ${d.car}%0A*Reg No:* ${d.reg}%0A*Contact:* ${d.phone}`;
-    window.open(`https://wa.me/?text=${text}`, '_blank');
-}
-
-// --- CUSTOMER LOGIC ---
 function handleSaveCustomer() {
     const name = document.getElementById('c-name').value;
     const address = document.getElementById('c-address').value;
     const phone = document.getElementById('c-phone').value;
-
     customers.push({ name, address, phone });
     localStorage.setItem('cp_customers', JSON.stringify(customers));
     toggleModal('customer-modal');
@@ -77,25 +118,11 @@ function handleSaveCustomer() {
 
 function renderCustomers() {
     const list = document.getElementById('customer-list');
-    list.innerHTML = customers.length ? '' : '<p class="text-gray-500 text-center">No customers added yet.</p>';
-    customers.forEach((c, index) => {
-        list.innerHTML += `
-            <div class="bg-white p-4 rounded-lg shadow-sm border">
-                <p class="font-bold">${c.name}</p>
-                <p class="text-sm text-gray-600">${c.address}</p>
-                <p class="text-sm text-blue-600">${c.phone}</p>
-            </div>`;
+    list.innerHTML = '';
+    customers.forEach(c => {
+        list.innerHTML += `<div class="bg-white p-3 rounded border"><p class="font-bold">${c.name}</p><p class="text-xs text-gray-500">${c.address}</p></div>`;
     });
 }
 
-function deleteItem(type, index) {
-    if (type === 'drivers') {
-        drivers.splice(index, 1);
-        localStorage.setItem('cp_drivers', JSON.stringify(drivers));
-        renderDrivers();
-    }
-}
-
-// Load initial data
-renderDrivers();
-renderCustomers();
+// Initial Load
+renderJobs();
