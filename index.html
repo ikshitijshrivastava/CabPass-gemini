@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CabPass - Dispatch</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans pb-20">
+
+    <header class="bg-yellow-500 p-4 text-white text-center shadow-md">
+        <h1 class="text-2xl font-bold">CabPass</h1>
+        <p class="text-sm">Job Sharing & Billing</p>
+    </header>
+
+    <nav class="flex bg-white border-b sticky top-0 z-10">
+        <button onclick="showTab('jobs')" id="tab-jobs" class="flex-1 p-3 text-blue-600 font-bold border-b-2 border-blue-600">Jobs</button>
+        <button onclick="showTab('drivers')" id="tab-drivers" class="flex-1 p-3 text-gray-600">Drivers</button>
+        <button onclick="showTab('customers')" id="tab-customers" class="flex-1 p-3 text-gray-600">Customers</button>
+    </nav>
+
+    <main id="section-jobs" class="p-4 space-y-4">
+        <div class="flex justify-between items-center">
+            <h2 class="text-xl font-bold">Active Jobs</h2>
+            <button onclick="toggleModal('job-modal')" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm">+ New Job</button>
+        </div>
+        <div id="job-list" class="space-y-3">
+            </div>
+    </main>
+
+    <main id="section-drivers" class="p-4 space-y-4 hidden">
+        <div class="flex justify-between items-center">
+            <h2 class="text-xl font-bold">My Drivers</h2>
+            <button onclick="toggleModal('driver-modal')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">+ Add Driver</button>
+        </div>
+        <div id="driver-list" class="space-y-3"></div>
+    </main>
+
+    <main id="section-customers" class="p-4 space-y-4 hidden">
+        <div class="flex justify-between items-center">
+            <h2 class="text-xl font-bold">Customers</h2>
+            <button onclick="toggleModal('customer-modal')" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm">+ Add Customer</button>
+        </div>
+        <div id="customer-list" class="space-y-3"></div>
+    </main>
+
+    <div id="job-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl w-full max-w-md">
+            <h3 class="text-lg font-bold mb-4">Post New Job</h3>
+            <input id="j-pickup" type="text" placeholder="Pickup Location" class="w-full border p-2 mb-2 rounded">
+            <input id="j-drop" type="text" placeholder="Drop Location" class="w-full border p-2 mb-2 rounded">
+            <input id="j-tariff" type="number" placeholder="Tariff (₹)" class="w-full border p-2 mb-2 rounded">
+            <input id="j-time" type="datetime-local" class="w-full border p-2 mb-4 rounded">
+            <div class="flex gap-2">
+                <button onclick="handleSaveJob()" class="flex-1 bg-green-600 text-white py-2 rounded">Post & Share</button>
+                <button onclick="toggleModal('job-modal')" class="flex-1 bg-gray-200 py-2 rounded">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="driver-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl w-full max-w-md">
+            <h3 class="text-lg font-bold mb-4">Add Driver Details</h3>
+            <input id="d-name" type="text" placeholder="Driver Name" class="w-full border p-2 mb-2 rounded">
+            <input id="d-car" type="text" placeholder="Car Model" class="w-full border p-2 mb-2 rounded">
+            <input id="d-reg" type="text" placeholder="Reg No." class="w-full border p-2 mb-2 rounded">
+            <input id="d-color" type="text" placeholder="Color" class="w-full border p-2 mb-2 rounded">
+            <input id="d-phone" type="tel" placeholder="Mobile" class="w-full border p-2 mb-4 rounded">
+            <div class="flex gap-2">
+                <button onclick="handleSaveDriver()" class="flex-1 bg-blue-600 text-white py-2 rounded">Save</button>
+                <button onclick="toggleModal('driver-modal')" class="flex-1 bg-gray-200 py-2 rounded">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="customer-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-xl w-full max-w-md">
+            <h3 class="text-lg font-bold mb-4">Add Customer</h3>
+            <input id="c-name" type="text" placeholder="Name" class="w-full border p-2 mb-2 rounded">
+            <textarea id="c-address" placeholder="Address" class="w-full border p-2 mb-2 rounded"></textarea>
+            <input id="c-phone" type="tel" placeholder="Mobile" class="w-full border p-2 mb-4 rounded">
+            <div class="flex gap-2">
+                <button onclick="handleSaveCustomer()" class="flex-1 bg-purple-600 text-white py-2 rounded">Save</button>
+                <button onclick="toggleModal('customer-modal')" class="flex-1 bg-gray-200 py-2 rounded">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
