@@ -1,79 +1,101 @@
-// --- 1. DATA STORAGE SETUP ---
-// This pulls saved data from your tablet's memory or starts with empty lists
+// --- DATABASE ---
 let drivers = JSON.parse(localStorage.getItem('cp_drivers')) || [];
 let customers = JSON.parse(localStorage.getItem('cp_customers')) || [];
 let jobs = JSON.parse(localStorage.getItem('cp_jobs')) || [];
 
-// --- 2. DRIVER MANAGEMENT ---
-function saveDriver(name, carModel, regNo, color, phone) {
-    const newDriver = {
-        id: Date.now(),
-        name: name,
-        car: `${color} ${carModel}`,
-        reg: regNo,
-        phone: phone
-    };
-    drivers.push(newDriver);
+// --- UI TAB SWITCHING ---
+function showTab(tab) {
+    // Hide all sections
+    ['jobs', 'drivers', 'customers'].forEach(t => {
+        document.getElementById(`section-${t}`).classList.add('hidden');
+        document.getElementById(`tab-${t}`).classList.remove('text-blue-600', 'font-bold', 'border-b-2', 'border-blue-600');
+        document.getElementById(`tab-${t}`).classList.add('text-gray-600');
+    });
+
+    // Show selected section
+    document.getElementById(`section-${tab}`).classList.remove('hidden');
+    document.getElementById(`tab-${tab}`).classList.add('text-blue-600', 'font-bold', 'border-b-2', 'border-blue-600');
+    
+    if (tab === 'drivers') renderDrivers();
+    if (tab === 'customers') renderCustomers();
+}
+
+function toggleModal(id) {
+    const modal = document.getElementById(id);
+    modal.classList.toggle('hidden');
+}
+
+// --- DRIVER LOGIC ---
+function handleSaveDriver() {
+    const name = document.getElementById('d-name').value;
+    const car = document.getElementById('d-car').value;
+    const reg = document.getElementById('d-reg').value;
+    const color = document.getElementById('d-color').value;
+    const phone = document.getElementById('d-phone').value;
+
+    if (!name || !phone) return alert("Name and Phone are required!");
+
+    drivers.push({ name, car, reg, color, phone });
     localStorage.setItem('cp_drivers', JSON.stringify(drivers));
-    alert("Driver Saved!");
+    toggleModal('driver-modal');
+    renderDrivers();
 }
 
-// --- 3. CUSTOMER MANAGEMENT ---
-function saveCustomer(name, address, phone) {
-    const newCustomer = {
-        id: Date.now(),
-        name: name,
-        address: address,
-        phone: phone
-    };
-    customers.push(newCustomer);
+function renderDrivers() {
+    const list = document.getElementById('driver-list');
+    list.innerHTML = drivers.length ? '' : '<p class="text-gray-500 text-center">No drivers added yet.</p>';
+    drivers.forEach((d, index) => {
+        list.innerHTML += `
+            <div class="bg-white p-4 rounded-lg shadow-sm border">
+                <p class="font-bold">${d.name}</p>
+                <p class="text-sm text-gray-600">${d.color} ${d.car} (${d.reg})</p>
+                <div class="mt-3 flex gap-2">
+                    <button onclick="shareDriver('${index}')" class="bg-green-500 text-white px-3 py-1 rounded text-xs">Share to WA</button>
+                    <button onclick="deleteItem('drivers', ${index})" class="bg-red-100 text-red-600 px-3 py-1 rounded text-xs">Delete</button>
+                </div>
+            </div>`;
+    });
+}
+
+function shareDriver(index) {
+    const d = drivers[index];
+    const text = `🚖 *Driver Details*%0A*Name:* ${d.name}%0A*Car:* ${d.color} ${d.car}%0A*Reg No:* ${d.reg}%0A*Contact:* ${d.phone}`;
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+}
+
+// --- CUSTOMER LOGIC ---
+function handleSaveCustomer() {
+    const name = document.getElementById('c-name').value;
+    const address = document.getElementById('c-address').value;
+    const phone = document.getElementById('c-phone').value;
+
+    customers.push({ name, address, phone });
     localStorage.setItem('cp_customers', JSON.stringify(customers));
-    alert("Customer Saved!");
+    toggleModal('customer-modal');
+    renderCustomers();
 }
 
-// --- 4. JOB & WHATSAPP LOGIC ---
-function createJob(pickup, drop, tariff, dateTime) {
-    const jobData = {
-        id: Date.now(),
-        pickup: pickup,
-        drop: drop,
-        tariff: tariff,
-        time: dateTime,
-        status: 'Open'
-    };
-    
-    jobs.push(jobData);
-    localStorage.setItem('cp_jobs', JSON.stringify(jobs));
-    
-    // Format the message for the WhatsApp Group
-    const waMessage = `🚖 *NEW JOB AVAILABLE* 🚖%0A%0A` +
-                      `📍 *From:* ${pickup}%0A` +
-                      `🏁 *To:* ${drop}%0A` +
-                      `⏰ *Time:* ${dateTime}%0A` +
-                      `💰 *Tariff:* ₹${tariff}%0A%0A` +
-                      `Reply 'YES' to accept.`;
-
-    // Open WhatsApp
-    window.open(`https://wa.me/?text=${waMessage}`, '_blank');
+function renderCustomers() {
+    const list = document.getElementById('customer-list');
+    list.innerHTML = customers.length ? '' : '<p class="text-gray-500 text-center">No customers added yet.</p>';
+    customers.forEach((c, index) => {
+        list.innerHTML += `
+            <div class="bg-white p-4 rounded-lg shadow-sm border">
+                <p class="font-bold">${c.name}</p>
+                <p class="text-sm text-gray-600">${c.address}</p>
+                <p class="text-sm text-blue-600">${c.phone}</p>
+            </div>`;
+    });
 }
 
-// --- 5. PASSING DETAILS TO ACCEPTED DRIVER ---
-// Once a driver says yes, use this to send them the private customer info
-function shareDetailsToDriver(driverPhone, customerName, customerPhone, location) {
-    const privateDetails = `✅ *JOB ASSIGNED* ✅%0A%0A` +
-                           `👤 *Cust:* ${customerName}%0A` +
-                           `📞 *Call:* ${customerPhone}%0A` +
-                           `📍 *Location:* ${location}`;
-    
-    window.open(`https://wa.me/${driverPhone}?text=${privateDetails}`, '_blank');
-}
-
-// --- 6. BILLING & PAYMENTS ---
-function markAsPaid(jobId) {
-    const job = jobs.find(j => j.id === jobId);
-    if (job) {
-        job.status = 'Paid';
-        localStorage.setItem('cp_jobs', JSON.stringify(jobs));
-        alert("Payment Tracked!");
+function deleteItem(type, index) {
+    if (type === 'drivers') {
+        drivers.splice(index, 1);
+        localStorage.setItem('cp_drivers', JSON.stringify(drivers));
+        renderDrivers();
     }
 }
+
+// Load initial data
+renderDrivers();
+renderCustomers();
